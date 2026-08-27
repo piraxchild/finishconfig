@@ -19,6 +19,26 @@
           "repeatCm": 30
         }
       ]
+    },
+    {
+      "id": "barrelchairfbx",
+      "name": "Barrelchairfbx",
+      "dims": "",
+      "file": "BarrelChair02.glb",
+      "slots": [
+        {
+          "key": "Material",
+          "label": "Material",
+          "kind": "fabric",
+          "repeatCm": 30
+        },
+        {
+          "key": "adskMatSeat",
+          "label": "AdskMatSeat",
+          "kind": "fabric",
+          "repeatCm": 30
+        }
+      ]
     }
   ]
 }
