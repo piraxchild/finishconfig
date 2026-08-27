@@ -26,8 +26,11 @@ jobs:
           git config user.name "library-scan"
           git config user.email "actions@github.com"
           git add public/library
-          git diff --cached --quiet || git commit -m "Update library manifests [skip ci]"
-          git push
+          if ! git diff --cached --quiet; then
+            git commit -m "Update library manifests [skip ci]"
+            git pull --rebase origin main
+            git push
+          fi
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
