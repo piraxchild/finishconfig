@@ -480,8 +480,6 @@ export default function FinishConfigurator() {
 
   const choosePiece = (p) => setPiece(p);
 
-  if (!library || !piece) return <div style={{ padding: 24, fontFamily: "sans-serif" }}>Loading library…</div>;
-
   const updateSlot = useCallback((key, patch) => {
     setConfig((prev) => {
       const next = { ...prev[key], ...patch };
@@ -519,6 +517,8 @@ export default function FinishConfigurator() {
     a.download = `${piece.id}-finishes.json`;
     a.click();
   };
+
+  if (!library || !piece) return <div style={{ padding: 24, fontFamily: "sans-serif" }}>Loading library…</div>;
 
   const fabricCount = slots.filter((s) => s.kind === "fabric").length;
   const filled = slots.filter((s) => s.kind === "fabric" && config[s.key]?.imageUrl).length;
