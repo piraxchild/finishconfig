@@ -1,1 +1,20 @@
-
+{
+  "id": "barrelchair",
+  "name": "Barrelchair",
+  "dims": "",
+  "file": "BarrelChair.glb",
+  "slots": [
+    {
+      "key": "Material",
+      "label": "Material",
+      "kind": "fabric",
+      "repeatCm": 30
+    },
+    {
+      "key": "fallback Material",
+      "label": "Fallback Material",
+      "kind": "fabric",
+      "repeatCm": 30
+    }
+  ]
+}
