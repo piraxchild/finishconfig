@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+
+const BASE = import.meta.env.BASE_URL;
 
 /* ─────────────────────────────────────────────────────────────
    FINISH CONFIGURATOR
@@ -29,10 +32,11 @@ const HARD_FINISHES = [
   { id: "chrome", label: "Polished chrome", color: "#C9CBCE", rough: 0.15, metal: 1 },
 ];
 
-/* Library manifest — in production this is index.json built from the folder scan. */
-const LIBRARY = [
+/* Built-in demo pieces, used only when public/library/index.json is missing. */
+const DEMO_LIBRARY = [
   {
     id: "sofa-03",
+    procedural: true,
     name: "Sofa 03",
     dims: "220 × 95 × 78 cm",
     slots: [
@@ -44,6 +48,7 @@ const LIBRARY = [
   },
   {
     id: "lounge-01",
+    procedural: true,
     name: "Lounge chair 01",
     dims: "82 × 88 × 74 cm",
     slots: [
@@ -54,6 +59,7 @@ const LIBRARY = [
   },
   {
     id: "ottoman-02",
+    procedural: true,
     name: "Ottoman 02",
     dims: "70 × 70 × 42 cm",
     slots: [
@@ -123,6 +129,59 @@ function buildPiece(id) {
   return g;
 }
 
+/* ───────── model loading ─────────
+   Real pieces: public/library/<id>/<file>.glb. Every finish zone must be its
+   own material in the GLB; the material NAME is the slot key. */
+
+const gltfLoader = new GLTFLoader();
+
+function guessKind(name) {
+  return /frame|leg|base|metal|wood|steel|brass|chrome|oak|walnut/i.test(name) ? "hard" : "fabric";
+}
+
+function loadPieceModel(piece) {
+  if (piece.procedural) {
+    const g = buildPiece(piece.id);
+    return Promise.resolve({ model: g, slots: piece.slots });
+  }
+  return new Promise((resolve, reject) => {
+    gltfLoader.load(
+      `${BASE}library/${piece.id}/${piece.file || "model.glb"}`,
+      (gltf) => {
+        const model = gltf.scene;
+        const found = new Map();
+        model.traverse((o) => {
+          if (!o.isMesh) return;
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          const key = mats[0]?.name || "Unnamed";
+          o.userData.slot = key;
+          o.castShadow = o.receiveShadow = true;
+          if (!found.has(key)) found.set(key, true);
+        });
+        // Manifest slots first (they carry labels/defaults), then any material
+        // in the GLB the manifest didn't mention.
+        const manifest = piece.slots || [];
+        const slots = manifest.filter((sl) => found.has(sl.key));
+        found.forEach((_, key) => {
+          if (!slots.find((sl) => sl.key === key)) {
+            const kind = guessKind(key);
+            slots.push(kind === "hard"
+              ? { key, label: key, kind, finish: "walnut" }
+              : { key, label: key, kind, repeatCm: 30 });
+          }
+        });
+        // Ground the model on y=0, centred on x/z
+        const bb = new THREE.Box3().setFromObject(model);
+        const c = bb.getCenter(new THREE.Vector3());
+        model.position.set(-c.x, -bb.min.y, -c.z);
+        resolve({ model, slots });
+      },
+      undefined,
+      reject
+    );
+  });
+}
+
 /* ───────── materials ───────── */
 
 function fabricMaterial(cfg, texture) {
@@ -140,7 +199,7 @@ function hardMaterial(finishId) {
 
 /* ───────── viewport ───────── */
 
-function Viewport({ piece, config, onReady }) {
+function Viewport({ model, slots, config, onReady }) {
   const mount = useRef();
   const state = useRef({});
 
@@ -235,16 +294,16 @@ function Viewport({ piece, config, onReady }) {
   // swap model
   useEffect(() => {
     const s = state.current;
-    if (!s.scene) return;
+    if (!s.scene || !model) return;
     if (s.model) s.scene.remove(s.model);
-    s.model = buildPiece(piece.id);
+    s.model = model;
     s.scene.add(s.model);
     const bb = new THREE.Box3().setFromObject(s.model);
     const size = bb.getSize(new THREE.Vector3());
     s.orbit.target.set(0, size.y / 2, 0);
     s.orbit.dist = Math.max(size.x, size.y, size.z) * 1.9;
     s.updateCam();
-  }, [piece.id]);
+  }, [model]);
 
   // apply materials
   useEffect(() => {
@@ -256,12 +315,13 @@ function Viewport({ piece, config, onReady }) {
       const key = o.userData.slot;
       if (!cache[key]) {
         const cfg = config[key];
+        if (!cfg) return;
         if (cfg.kind === "hard") cache[key] = hardMaterial(cfg.finish);
         else cache[key] = fabricMaterial(cfg, cfg.texture);
       }
-      if (o.material !== cache[key]) o.material = cache[key];
+      if (cache[key] && o.material !== cache[key]) o.material = cache[key];
     });
-  }, [config, piece.id]);
+  }, [config, model]);
 
   return <div ref={mount} style={{ position: "absolute", inset: 0, cursor: "grab" }} />;
 }
@@ -376,9 +436,9 @@ function SlotCard({ slot, cfg, onChange, active, onFocus }) {
   );
 }
 
-function initConfig(piece) {
+function initConfig(slots) {
   const c = {};
-  piece.slots.forEach((s) => {
+  slots.forEach((s) => {
     c[s.key] = s.kind === "hard"
       ? { kind: "hard", finish: s.finish }
       : { kind: "fabric", repeatCm: s.repeatCm, rotation: 0, mirror: false, tint: "#ffffff", image: null, imageUrl: null, imageName: null, texture: null };
@@ -387,12 +447,40 @@ function initConfig(piece) {
 }
 
 export default function FinishConfigurator() {
-  const [piece, setPiece] = useState(LIBRARY[0]);
-  const [config, setConfig] = useState(() => initConfig(LIBRARY[0]));
+  const [library, setLibrary] = useState(null);
+  const [piece, setPiece] = useState(null);
+  const [model, setModel] = useState(null);
+  const [slots, setSlots] = useState([]);
+  const [config, setConfig] = useState({});
   const [active, setActive] = useState(null);
+  const [status, setStatus] = useState("");
   const three = useRef(null);
 
-  const choosePiece = (p) => { setPiece(p); setConfig(initConfig(p)); setActive(null); };
+  // Load manifest; fall back to built-in demo pieces if none exists yet.
+  useEffect(() => {
+    fetch(`${BASE}library/index.json`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((j) => { const lib = j.pieces || j; setLibrary(lib); setPiece(lib[0]); })
+      .catch(() => { setLibrary(DEMO_LIBRARY); setPiece(DEMO_LIBRARY[0]); });
+  }, []);
+
+  // Load the selected piece
+  useEffect(() => {
+    if (!piece) return;
+    let cancelled = false;
+    setStatus("Loading…");
+    loadPieceModel(piece)
+      .then(({ model, slots }) => {
+        if (cancelled) return;
+        setModel(model); setSlots(slots); setConfig(initConfig(slots)); setActive(null); setStatus("");
+      })
+      .catch((e) => { if (!cancelled) setStatus(`Couldn't load ${piece.id}: ${e?.message || "file missing or not a GLB"}`); });
+    return () => { cancelled = true; };
+  }, [piece]);
+
+  const choosePiece = (p) => setPiece(p);
+
+  if (!library || !piece) return <div style={{ padding: 24, fontFamily: "sans-serif" }}>Loading library…</div>;
 
   const updateSlot = useCallback((key, patch) => {
     setConfig((prev) => {
@@ -416,6 +504,7 @@ export default function FinishConfigurator() {
 
   const exportSpec = () => {
     const spec = {
+      pieceName: piece.name,
       piece: piece.id,
       slots: Object.fromEntries(
         Object.entries(config).map(([k, v]) => [k, v.kind === "hard"
@@ -431,16 +520,16 @@ export default function FinishConfigurator() {
     a.click();
   };
 
-  const fabricCount = piece.slots.filter((s) => s.kind === "fabric").length;
-  const filled = piece.slots.filter((s) => s.kind === "fabric" && config[s.key]?.imageUrl).length;
+  const fabricCount = slots.filter((s) => s.kind === "fabric").length;
+  const filled = slots.filter((s) => s.kind === "fabric" && config[s.key]?.imageUrl).length;
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "200px 1fr 340px", height: "100vh", background: T.bg, color: T.ink, fontFamily: "-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif", fontSize: 13 }}>
       {/* Library rail */}
       <aside style={{ borderRight: `1px solid ${T.line}`, padding: 18, overflowY: "auto" }}>
         <div style={{ fontFamily: "'Iowan Old Style', 'Palatino Linotype', Georgia, serif", fontSize: 22, lineHeight: 1.1, marginBottom: 4 }}>Finish<br />configurator</div>
-        <div style={{ ...label, marginBottom: 18 }}>Library · {LIBRARY.length} pieces</div>
-        {LIBRARY.map((p) => (
+        <div style={{ ...label, marginBottom: 18 }}>Library · {library.length} pieces</div>
+        {library.map((p) => (
           <button
             key={p.id}
             onClick={() => choosePiece(p)}
@@ -450,9 +539,10 @@ export default function FinishConfigurator() {
               border: `1px solid ${piece.id === p.id ? T.ink : T.line}`, cursor: "pointer",
             }}
           >
-            <div style={{ fontSize: 14 }}>{p.name}</div>
-            <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{p.dims}</div>
-            <div style={{ fontSize: 11, opacity: 0.7 }}>{p.slots.length} finish zones</div>
+            {p.thumb && <img src={`${BASE}library/${p.id}/${p.thumb}`} alt="" style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", marginBottom: 6, display: "block" }} />}
+            <div style={{ fontSize: 14 }}>{p.name || p.id}</div>
+            {p.dims && <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{p.dims}</div>}
+            {p.slots && <div style={{ fontSize: 11, opacity: 0.7 }}>{p.slots.length} finish zones</div>}
           </button>
         ))}
         <div style={{ ...label, textTransform: "none", letterSpacing: 0, marginTop: 24, lineHeight: 1.5 }}>
@@ -462,10 +552,10 @@ export default function FinishConfigurator() {
 
       {/* Viewport */}
       <main style={{ position: "relative" }}>
-        <Viewport piece={piece} config={config} onReady={(s) => (three.current = s)} />
+        <Viewport model={model} slots={slots} config={config} onReady={(s) => (three.current = s)} />
         <div style={{ position: "absolute", top: 18, left: 20, pointerEvents: "none" }}>
           <div style={{ fontFamily: "'Iowan Old Style', 'Palatino Linotype', Georgia, serif", fontSize: 28 }}>{piece.name}</div>
-          <div style={label}>{filled} of {fabricCount} fabric zones assigned · drag to orbit, scroll to zoom</div>
+          <div style={label}>{status || `${filled} of ${fabricCount} fabric zones assigned · drag to orbit, scroll to zoom`}</div>
         </div>
         <div style={{ position: "absolute", bottom: 18, left: 20, display: "flex", gap: 8 }}>
           <button onClick={snapshot} style={{ background: T.accent, color: T.accentInk, border: "none", padding: "9px 14px", cursor: "pointer", fontSize: 13 }}>Save image</button>
@@ -476,11 +566,11 @@ export default function FinishConfigurator() {
       {/* Slots panel */}
       <aside style={{ borderLeft: `1px solid ${T.line}`, padding: 18, overflowY: "auto" }}>
         <div style={{ ...label, marginBottom: 12 }}>Finish zones</div>
-        {piece.slots.map((s) => (
+        {slots.map((s) => (
           <SlotCard
             key={s.key}
             slot={s}
-            cfg={config[s.key]}
+            cfg={config[s.key] || {}}
             active={active === s.key}
             onFocus={() => setActive(s.key)}
             onChange={(patch) => updateSlot(s.key, patch)}
