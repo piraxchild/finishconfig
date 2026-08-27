@@ -28,13 +28,13 @@
       "slots": [
         {
           "key": "Material",
-          "label": "Legs",
-          "kind": "Metal",
+          "label": "Material",
+          "kind": "fabric",
           "repeatCm": 30
         },
         {
           "key": "adskMatSeat",
-          "label": "seat",
+          "label": "AdskMatSeat",
           "kind": "fabric",
           "repeatCm": 30
         }
