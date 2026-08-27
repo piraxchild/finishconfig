@@ -28,7 +28,14 @@ for (const dir of readdirSync(ROOT)) {
   const thumb = readdirSync(full).find((f) => /^thumb\.(jpg|jpeg|png|webp)$/i.test(f));
 
   const manifestPath = join(full, "piece.json");
-  const existing = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf8")) : {};
+  let existing = {};
+  if (existsSync(manifestPath)) {
+    const raw = readFileSync(manifestPath, "utf8").trim();
+    if (raw) {
+      try { existing = JSON.parse(raw); }
+      catch (e) { console.warn(`${dir}/piece.json is not valid JSON (${e.message}); regenerating it`); }
+    }
+  }
   const prevSlots = existing.slots || [];
 
   const names = glbMaterialNames(join(full, glb));
