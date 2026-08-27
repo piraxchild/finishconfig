@@ -4,7 +4,7 @@ on:
     branches: [main]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 concurrency:
@@ -21,6 +21,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: mkdir -p public/library && node scripts/scan-library.mjs
+      - name: Commit generated manifests
+        run: |
+          git config user.name "library-scan"
+          git config user.email "actions@github.com"
+          git add public/library
+          git diff --cached --quiet || git commit -m "Update library manifests [skip ci]"
+          git push
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
