@@ -20,6 +20,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: mkdir -p public/library && node scripts/scan-library.mjs
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
