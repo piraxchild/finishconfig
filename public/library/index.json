@@ -27,13 +27,13 @@
       "file": "BarrelChair02.glb",
       "slots": [
         {
-          "key": "Legs",
+          "key": "Material",
           "label": "Material",
           "kind": "fabric",
           "repeatCm": 30
         },
         {
-          "key": "Seat",
+          "key": "adskMatSeat",
           "label": "AdskMatSeat",
           "kind": "fabric",
           "repeatCm": 30
