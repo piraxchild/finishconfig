@@ -16,7 +16,20 @@ function glbMaterialNames(file) {
   if (buf.readUInt32LE(0) !== 0x46546c67) throw new Error("not a GLB (magic mismatch)");
   const jsonLen = buf.readUInt32LE(12);
   const json = JSON.parse(buf.subarray(20, 20 + jsonLen).toString("utf8"));
-  return (json.materials || []).map((m, i) => m.name || `Material ${i + 1}`);
+  const mats = json.materials || [];
+  // Only materials actually assigned to geometry — matches what the app sees.
+  const used = new Set();
+  let unassigned = 0;
+  (json.meshes || []).forEach((m) => (m.primitives || []).forEach((p) => {
+    if (p.material === undefined) unassigned++;
+    else used.add(p.material);
+  }));
+  const names = [...new Set([...used].map((i) => mats[i]?.name || "Unnamed"))];
+  mats.forEach((m, i) => {
+    if (!used.has(i)) console.warn(`  note: material "${m.name || i}" is defined in the file but not assigned to any geometry`);
+  });
+  if (unassigned) console.warn(`  note: ${unassigned} mesh part(s) have no material at all (will show as "Unnamed")`);
+  return names;
 }
 
 function titleCase(s) {
