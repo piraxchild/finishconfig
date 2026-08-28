@@ -1,1 +1,20 @@
-
+{
+  "id": "SwivelChair_01",
+  "name": "SwivelChair 01",
+  "dims": "",
+  "file": "SwivelChair.glb",
+  "slots": [
+    {
+      "key": "Material",
+      "label": "Material",
+      "kind": "fabric",
+      "repeatCm": 30
+    },
+    {
+      "key": "adskMatSeat",
+      "label": "Seat",
+      "kind": "fabric",
+      "repeatCm": 30
+    }
+  ]
+}
