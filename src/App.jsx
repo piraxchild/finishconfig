@@ -139,6 +139,11 @@ function guessKind(name) {
   return /frame|leg|base|metal|wood|steel|brass|chrome|oak|walnut/i.test(name) ? "hard" : "fabric";
 }
 
+// Strip Max exporter's "AdskMat" prefix and ".001"-style suffixes for display.
+function cleanName(n) {
+  return n.replace(/^AdskMat/i, "").replace(/\.\d+$/, "").trim() || n;
+}
+
 function loadPieceModel(piece) {
   if (piece.procedural) {
     const g = buildPiece(piece.id);
@@ -164,10 +169,11 @@ function loadPieceModel(piece) {
         const slots = manifest.filter((sl) => found.has(sl.key));
         found.forEach((_, key) => {
           if (!slots.find((sl) => sl.key === key)) {
-            const kind = guessKind(key);
+            const nice = cleanName(key);
+            const kind = guessKind(nice);
             slots.push(kind === "hard"
-              ? { key, label: key, kind, finish: "walnut" }
-              : { key, label: key, kind, repeatCm: 30 });
+              ? { key, label: nice, kind, finish: "walnut" }
+              : { key, label: nice, kind, repeatCm: 30 });
           }
         });
         // Ground the model on y=0, centred on x/z
