@@ -7,6 +7,10 @@ import { join } from "node:path";
 const ROOT = join(process.cwd(), "public", "library");
 const HARD = /frame|leg|base|metal|wood|steel|brass|chrome|oak|walnut/i;
 
+// Max's glTF exporter prefixes converted materials with "AdskMat" and some
+// exporters append ".001"-style suffixes — strip both for display purposes.
+const cleanName = (n) => n.replace(/^AdskMat/i, "").replace(/\.\d+$/, "").trim() || n;
+
 function glbMaterialNames(file) {
   const buf = readFileSync(file);
   if (buf.readUInt32LE(0) !== 0x46546c67) throw new Error("not a GLB (magic mismatch)");
@@ -42,9 +46,10 @@ for (const dir of readdirSync(ROOT)) {
   const slots = names.map((key) => {
     const kept = prevSlots.find((s) => s.key === key);
     if (kept) return kept;
-    return HARD.test(key)
-      ? { key, label: titleCase(key), kind: "hard", finish: "walnut" }
-      : { key, label: titleCase(key), kind: "fabric", repeatCm: 30 };
+    const nice = cleanName(key);
+    return HARD.test(nice)
+      ? { key, label: titleCase(nice), kind: "hard", finish: "walnut" }
+      : { key, label: titleCase(nice), kind: "fabric", repeatCm: 30 };
   });
 
   const piece = {
