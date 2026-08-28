@@ -13,7 +13,7 @@
           "finish": "walnut"
         },
         {
-          "key": "adskMatSeat",
+          "key": "Seat",
           "label": "Seat",
           "kind": "fabric",
           "repeatCm": 30
