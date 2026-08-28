@@ -11,8 +11,8 @@
       "repeatCm": 30
     },
     {
-      "key": "fallback Material",
-      "label": "Fallback Material",
+      "key": "adskMatSeat",
+      "label": "AdskMatSeat",
       "kind": "fabric",
       "repeatCm": 30
     }
