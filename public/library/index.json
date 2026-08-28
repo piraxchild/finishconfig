@@ -7,10 +7,10 @@
       "file": "SwivelChair.glb",
       "slots": [
         {
-          "key": "Material",
-          "label": "Material",
-          "kind": "fabric",
-          "repeatCm": 30
+          "key": "Legs",
+          "label": "Legs",
+          "kind": "hard",
+          "finish": "walnut"
         },
         {
           "key": "adskMatSeat",
