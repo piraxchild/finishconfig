@@ -158,22 +158,23 @@ function loadPieceModel(piece) {
         model.traverse((o) => {
           if (!o.isMesh) return;
           const mats = Array.isArray(o.material) ? o.material : [o.material];
-          const key = mats[0]?.name || "Unnamed";
+          const key = mats[0]?.name || "Unnamed";  // keep in sync with scan-library.mjs
           o.userData.slot = key;
           o.castShadow = o.receiveShadow = true;
-          if (!found.has(key)) found.set(key, true);
+          const hasUV = !!o.geometry?.attributes?.uv;
+          found.set(key, (found.get(key) ?? true) && hasUV);
         });
         // Manifest slots first (they carry labels/defaults), then any material
         // in the GLB the manifest didn't mention.
         const manifest = piece.slots || [];
-        const slots = manifest.filter((sl) => found.has(sl.key));
+        const slots = manifest.filter((sl) => found.has(sl.key)).map((sl) => ({ ...sl, hasUV: found.get(sl.key) }));
         found.forEach((_, key) => {
           if (!slots.find((sl) => sl.key === key)) {
             const nice = cleanName(key);
             const kind = guessKind(nice);
             slots.push(kind === "hard"
-              ? { key, label: nice, kind, finish: "walnut" }
-              : { key, label: nice, kind, repeatCm: 30 });
+              ? { key, label: nice, kind, finish: "walnut", hasUV: found.get(key) }
+              : { key, label: nice, kind, repeatCm: 30, hasUV: found.get(key) });
           }
         });
         // Ground the model on y=0, centred on x/z
@@ -381,6 +382,12 @@ function SlotCard({ slot, cfg, onChange, active, onFocus }) {
         <span style={label}>{slot.kind === "hard" ? "hard finish" : "fabric"}</span>
       </div>
 
+      {slot.kind === "fabric" && slot.hasUV === false && (
+        <div style={{ marginTop: 8, padding: "6px 8px", background: "#B3462B", color: "#F5F4F0", fontSize: 11, lineHeight: 1.4 }}>
+          This zone has no UV coordinates in the exported model, so a swatch will show as one flat
+          color. In Max: apply any bitmap to this material's base color, then re-export.
+        </div>
+      )}
       {slot.kind === "hard" ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginTop: 10 }}>
           {HARD_FINISHES.map((f) => (
