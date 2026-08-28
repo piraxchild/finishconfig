@@ -25,6 +25,14 @@ function glbMaterialNames(file) {
     else used.add(p.material);
   }));
   const names = [...new Set([...used].map((i) => mats[i]?.name || "Unnamed"))];
+  // Warn when geometry using a material carries no UVs (exporter drops them
+  // when no texture is applied in Max — swatches then render as one flat color).
+  const noUV = new Set();
+  (json.meshes || []).forEach((m) => (m.primitives || []).forEach((p) => {
+    if (p.material !== undefined && !(p.attributes && "TEXCOORD_0" in p.attributes))
+      noUV.add(mats[p.material]?.name || "Unnamed");
+  }));
+  noUV.forEach((n) => console.warn(`  WARNING: "${n}" geometry has no UV coordinates — apply any bitmap to that material's base color in Max and re-export`));
   mats.forEach((m, i) => {
     if (!used.has(i)) console.warn(`  note: material "${m.name || i}" is defined in the file but not assigned to any geometry`);
   });
