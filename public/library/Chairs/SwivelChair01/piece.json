@@ -1,0 +1,22 @@
+{
+  "id": "Chairs/SwivelChair01",
+  "path": "Chairs/SwivelChair01",
+  "category": "Chairs",
+  "name": "SwivelChair01",
+  "dims": "",
+  "file": "SwivelChair.glb",
+  "slots": [
+    {
+      "key": "Legs",
+      "label": "Legs",
+      "kind": "hard",
+      "finish": "walnut"
+    },
+    {
+      "key": "Seat",
+      "label": "Seat",
+      "kind": "fabric",
+      "repeatCm": 30
+    }
+  ]
+}
