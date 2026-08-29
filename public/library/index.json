@@ -2,6 +2,8 @@
   "pieces": [
     {
       "id": "SwivelChair_01",
+      "path": "SwivelChair_01",
+      "category": "Unsorted",
       "name": "SwivelChair 01",
       "dims": "",
       "file": "SwivelChair.glb",
