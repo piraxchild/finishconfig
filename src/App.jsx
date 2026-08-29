@@ -37,6 +37,7 @@ const DEMO_LIBRARY = [
   {
     id: "sofa-03",
     procedural: true,
+    category: "Demo pieces",
     name: "Sofa 03",
     dims: "220 × 95 × 78 cm",
     slots: [
@@ -49,6 +50,7 @@ const DEMO_LIBRARY = [
   {
     id: "lounge-01",
     procedural: true,
+    category: "Demo pieces",
     name: "Lounge chair 01",
     dims: "82 × 88 × 74 cm",
     slots: [
@@ -60,6 +62,7 @@ const DEMO_LIBRARY = [
   {
     id: "ottoman-02",
     procedural: true,
+    category: "Demo pieces",
     name: "Ottoman 02",
     dims: "70 × 70 × 42 cm",
     slots: [
@@ -151,7 +154,7 @@ function loadPieceModel(piece) {
   }
   return new Promise((resolve, reject) => {
     gltfLoader.load(
-      `${BASE}library/${piece.id}/${piece.file || "model.glb"}`,
+      `${BASE}library/${piece.path || piece.id}/${piece.file || "model.glb"}`,
       (gltf) => {
         const model = gltf.scene;
         const found = new Map();
@@ -467,14 +470,15 @@ export default function FinishConfigurator() {
   const [config, setConfig] = useState({});
   const [active, setActive] = useState(null);
   const [status, setStatus] = useState("");
+  const [openCats, setOpenCats] = useState(null); // null until library loads
   const three = useRef(null);
 
   // Load manifest; fall back to built-in demo pieces if none exists yet.
   useEffect(() => {
     fetch(`${BASE}library/index.json`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((j) => { const lib = j.pieces || j; setLibrary(lib); setPiece(lib[0]); })
-      .catch(() => { setLibrary(DEMO_LIBRARY); setPiece(DEMO_LIBRARY[0]); });
+      .then((j) => { const lib = j.pieces || j; setLibrary(lib); setPiece(lib[0]); setOpenCats({ [lib[0]?.category || "Unsorted"]: true }); })
+      .catch(() => { setLibrary(DEMO_LIBRARY); setPiece(DEMO_LIBRARY[0]); setOpenCats({ "Demo pieces": true }); });
   }, []);
 
   // Load the selected piece
@@ -542,22 +546,40 @@ export default function FinishConfigurator() {
       <aside style={{ borderRight: `1px solid ${T.line}`, padding: 18, overflowY: "auto" }}>
         <div style={{ fontFamily: "'Iowan Old Style', 'Palatino Linotype', Georgia, serif", fontSize: 22, lineHeight: 1.1, marginBottom: 4 }}>Finish<br />configurator</div>
         <div style={{ ...label, marginBottom: 18 }}>Library · {library.length} pieces</div>
-        {library.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => choosePiece(p)}
-            style={{
-              display: "block", width: "100%", textAlign: "left", marginBottom: 8, padding: 10,
-              background: piece.id === p.id ? T.ink : "transparent", color: piece.id === p.id ? T.panel : T.ink,
-              border: `1px solid ${piece.id === p.id ? T.ink : T.line}`, cursor: "pointer",
-            }}
-          >
-            {p.thumb && <img src={`${BASE}library/${p.id}/${p.thumb}`} alt="" style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", marginBottom: 6, display: "block" }} />}
-            <div style={{ fontSize: 14 }}>{p.name || p.id}</div>
-            {p.dims && <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{p.dims}</div>}
-            {p.slots && <div style={{ fontSize: 11, opacity: 0.7 }}>{p.slots.length} finish zones</div>}
-          </button>
-        ))}
+        {[...new Set(library.map((p) => p.category || "Unsorted"))].map((cat) => {
+          const items = library.filter((p) => (p.category || "Unsorted") === cat);
+          const open = !!openCats?.[cat];
+          return (
+            <div key={cat} style={{ marginBottom: 8 }}>
+              <button
+                onClick={() => setOpenCats((o) => ({ ...o, [cat]: !o?.[cat] }))}
+                style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
+                  padding: "9px 10px", background: T.mute, color: T.panel, border: "none", cursor: "pointer", fontSize: 13,
+                }}
+              >
+                <span>{cat}</span>
+                <span style={{ fontFamily: "monospace", fontSize: 15, lineHeight: 1 }}>{open ? "−" : "+"}</span>
+              </button>
+              {open && items.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => choosePiece(p)}
+                  style={{
+                    display: "block", width: "100%", textAlign: "left", marginTop: 6, padding: 10,
+                    background: piece.id === p.id ? T.ink : "transparent", color: piece.id === p.id ? T.panel : T.ink,
+                    border: `1px solid ${piece.id === p.id ? T.ink : T.line}`, cursor: "pointer",
+                  }}
+                >
+                  {p.thumb && <img src={`${BASE}library/${p.path || p.id}/${p.thumb}`} alt="" style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", marginBottom: 6, display: "block" }} />}
+                  <div style={{ fontSize: 14 }}>{p.name || p.id}</div>
+                  {p.dims && <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{p.dims}</div>}
+                  {p.slots && <div style={{ fontSize: 11, opacity: 0.7 }}>{p.slots.length} finish zones</div>}
+                </button>
+              ))}
+            </div>
+          );
+        })}
         <div style={{ ...label, textTransform: "none", letterSpacing: 0, marginTop: 24, lineHeight: 1.5 }}>
           Pieces appear here automatically when a model folder is added to the library.
         </div>
