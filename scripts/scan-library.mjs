@@ -45,11 +45,24 @@ function titleCase(s) {
 }
 
 const pieces = [];
-for (const dir of readdirSync(ROOT)) {
-  const full = join(ROOT, dir);
+function hasGlb(dir) { return readdirSync(dir).some((f) => f.toLowerCase().endsWith(".glb")); }
+
+// Two levels: library/<category>/<piece>/ or library/<piece>/ (category "Unsorted")
+const targets = [];
+for (const top of readdirSync(ROOT)) {
+  const full = join(ROOT, top);
   if (!statSync(full).isDirectory()) continue;
+  if (hasGlb(full)) targets.push({ dir: top, path: top, category: "Unsorted" });
+  else for (const sub of readdirSync(full)) {
+    const subFull = join(full, sub);
+    if (statSync(subFull).isDirectory() && hasGlb(subFull)) targets.push({ dir: sub, path: `${top}/${sub}`, category: top });
+    else if (statSync(subFull).isDirectory()) console.warn(`skip ${top}/${sub}: no .glb`);
+  }
+}
+
+for (const { dir, path, category } of targets) {
+  const full = join(ROOT, path);
   const glb = readdirSync(full).find((f) => f.toLowerCase().endsWith(".glb"));
-  if (!glb) { console.warn(`skip ${dir}: no .glb`); continue; }
   const thumb = readdirSync(full).find((f) => /^thumb\.(jpg|jpeg|png|webp)$/i.test(f));
 
   const manifestPath = join(full, "piece.json");
@@ -74,7 +87,9 @@ for (const dir of readdirSync(ROOT)) {
   });
 
   const piece = {
-    id: dir,
+    id: path,
+    path,
+    category,
     name: existing.name || titleCase(dir),
     dims: existing.dims || "",
     file: glb,
@@ -83,7 +98,7 @@ for (const dir of readdirSync(ROOT)) {
   };
   writeFileSync(manifestPath, JSON.stringify(piece, null, 2) + "\n");
   pieces.push(piece);
-  console.log(`${dir}: ${slots.length} slots — ${names.join(", ")}`);
+  console.log(`${path}: ${slots.length} slots — ${names.join(", ")}`);
 }
 
 writeFileSync(join(ROOT, "index.json"), JSON.stringify({ pieces }, null, 2) + "\n");
