@@ -21,28 +21,6 @@
           "repeatCm": 30
         }
       ]
-    },
-    {
-      "id": "SwivelChair_01",
-      "path": "SwivelChair_01",
-      "category": "Unsorted",
-      "name": "SwivelChair 01",
-      "dims": "",
-      "file": "SwivelChair.glb",
-      "slots": [
-        {
-          "key": "Legs",
-          "label": "Legs",
-          "kind": "hard",
-          "finish": "walnut"
-        },
-        {
-          "key": "Seat",
-          "label": "Seat",
-          "kind": "fabric",
-          "repeatCm": 30
-        }
-      ]
     }
   ]
 }
