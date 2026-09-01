@@ -43,6 +43,28 @@
           "finish": "walnut"
         }
       ]
+    },
+    {
+      "id": "Chairs/Zowie_Lounge_Chair",
+      "path": "Chairs/Zowie_Lounge_Chair",
+      "category": "Chairs",
+      "name": "Zowie Lounge Chair",
+      "dims": "",
+      "file": "ZowieChair_AIV2.glb",
+      "slots": [
+        {
+          "key": "fallback Material",
+          "label": "Fallback Material",
+          "kind": "fabric",
+          "repeatCm": 30
+        },
+        {
+          "key": "M_Wood_NaturallWalnut",
+          "label": "M Wood NaturallWalnut",
+          "kind": "hard",
+          "finish": "walnut"
+        }
+      ]
     }
   ]
 }
