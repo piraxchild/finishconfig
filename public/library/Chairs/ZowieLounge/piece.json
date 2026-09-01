@@ -7,10 +7,16 @@
   "file": "ZowieChair_AI.glb",
   "slots": [
     {
-      "key": "fallback Material",
-      "label": "Fallback Material",
+      "key": "M_Fabric_Arc_Com_Sherlock_Rainstorm",
+      "label": "M Fabric Arc Com Sherlock Rainstorm",
       "kind": "fabric",
       "repeatCm": 30
+    },
+    {
+      "key": "M_Wood_NaturallWalnut",
+      "label": "M Wood NaturallWalnut",
+      "kind": "hard",
+      "finish": "walnut"
     }
   ]
 }
