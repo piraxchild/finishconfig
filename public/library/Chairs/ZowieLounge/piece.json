@@ -7,8 +7,8 @@
   "file": "ZowieChair_AI.glb",
   "slots": [
     {
-      "key": "M_Fabric_Arc_Com_Sherlock_Rainstorm",
-      "label": "M Fabric Arc Com Sherlock Rainstorm",
+      "key": "fallback Material",
+      "label": "Fallback Material",
       "kind": "fabric",
       "repeatCm": 30
     },
