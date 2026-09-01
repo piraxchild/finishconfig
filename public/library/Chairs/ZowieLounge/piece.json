@@ -1,0 +1,16 @@
+{
+  "id": "Chairs/ZowieLounge",
+  "path": "Chairs/ZowieLounge",
+  "category": "Chairs",
+  "name": "ZowieLounge",
+  "dims": "",
+  "file": "ZowieChair_AI.glb",
+  "slots": [
+    {
+      "key": "fallback Material",
+      "label": "Fallback Material",
+      "kind": "fabric",
+      "repeatCm": 30
+    }
+  ]
+}
