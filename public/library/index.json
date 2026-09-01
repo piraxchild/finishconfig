@@ -23,28 +23,6 @@
       ]
     },
     {
-      "id": "Chairs/ZowieLounge",
-      "path": "Chairs/ZowieLounge",
-      "category": "Chairs",
-      "name": "ZowieLounge",
-      "dims": "",
-      "file": "ZowieChair_AI.glb",
-      "slots": [
-        {
-          "key": "fallback Material",
-          "label": "Fallback Material",
-          "kind": "fabric",
-          "repeatCm": 30
-        },
-        {
-          "key": "M_Wood_NaturallWalnut",
-          "label": "M Wood NaturallWalnut",
-          "kind": "hard",
-          "finish": "walnut"
-        }
-      ]
-    },
-    {
       "id": "Chairs/Zowie_Lounge_Chair",
       "path": "Chairs/Zowie_Lounge_Chair",
       "category": "Chairs",
