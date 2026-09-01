@@ -7,14 +7,14 @@
   "file": "ZowieChair_AIV2.glb",
   "slots": [
     {
-      "key": "fallback Material",
-      "label": "Fallback Material",
+      "key": "Fabric",
+      "label": "Fabric",
       "kind": "fabric",
       "repeatCm": 30
     },
     {
-      "key": "M_Wood_NaturallWalnut",
-      "label": "M Wood NaturallWalnut",
+      "key": "Legs",
+      "label": "Legs",
       "kind": "hard",
       "finish": "walnut"
     }
